@@ -25,15 +25,18 @@ public class Spawner : MonoBehaviour
         _arPlaneMngr = GetComponent<ARPlaneManager>();
         EnhancedTouch.TouchSimulation.Enable();
         EnhancedTouch.EnhancedTouchSupport.Enable();
-        InputManager.ListeningFingerInput += Spawn;
-        //EnhancedTouch.Touch.onFingerDown += Spawn;
+
+        InputManager.ListeningOneTouch += SpawnAlgae;
+        InputManager.ListeningTwoTouches += SpawnWaterSource;
     }
 
     private void OnDisable()
     {
         EnhancedTouch.TouchSimulation.Disable();
         EnhancedTouch.EnhancedTouchSupport.Disable();
-        //EnhancedTouch.Touch.onFingerDown -= Spawn;
+
+        InputManager.ListeningOneTouch -= SpawnAlgae;
+        InputManager.ListeningTwoTouches -= SpawnWaterSource;
     }
 
 
@@ -42,20 +45,8 @@ public class Spawner : MonoBehaviour
         _gm.DebugLog(message);
     }
 
-    public void Spawn(EnhancedTouch.Touch touch, int fingersUsed) {
-        GameObject prefabToSpawn = null;
-        if (fingersUsed == 1)
-        {
-            prefabToSpawn = _prefabAlgae;
-        }
-        else if (fingersUsed == 2)
-        {
-            prefabToSpawn = _prefabWaterSource;
-        }
-
-        DebugLog($"{fingersUsed} touches have been detected");
-
-        if (prefabToSpawn != null && _arRaycastMngr.Raycast(touch.finger.currentTouch.screenPosition, _hits, TrackableType.PlaneWithinPolygon))
+    public void Spawn(GameObject prefabToSpawn, Vector2 targetPosition) {
+       if (prefabToSpawn != null && _arRaycastMngr.Raycast(targetPosition, _hits, TrackableType.PlaneWithinPolygon))
         {
             DebugLog($"prefabToSpawn is {prefabToSpawn.name} \n");
             Pose pose = _hits[0].pose;
@@ -74,6 +65,16 @@ public class Spawner : MonoBehaviour
             objectSpawned.transform.rotation = objectSpawned.transform.rotation * targetRotation; //Applies the extra rotation to the original rotation; Quaternions CANNOT be added together, they must be multiplied
 
         }
+    }
+
+    public void SpawnAlgae(EnhancedTouch.Touch touch)
+    {
+        Spawn(_prefabAlgae, touch.finger.currentTouch.screenPosition);
+    }
+
+    public void SpawnWaterSource(EnhancedTouch.Touch touch)
+    {
+        Spawn(_prefabWaterSource, touch.finger.currentTouch.screenPosition);
     }
 
     public void Spawn0(EnhancedTouch.Finger finger)

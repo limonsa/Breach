@@ -1,44 +1,20 @@
 using UnityEngine;
 using EnhancedTouch = UnityEngine.InputSystem.EnhancedTouch;
 using UnityEngine.Events;
-using UnityEngine.InputSystem.EnhancedTouch;
-using System.Reflection;
 
-//[RequireComponent(typeof(ARRaycastManager), typeof(ARPlaneManager))]
 public class InputManager : MonoBehaviour
 {
     [SerializeField] private GameManager _gm;
 
-    public static UnityAction<EnhancedTouch.Touch, int> ListeningFingerInput;
+    public static UnityAction<EnhancedTouch.Touch> ListeningOneTouch;
+    public static UnityAction<EnhancedTouch.Touch> ListeningTwoTouches;
+    public static UnityAction<Vector2, Vector2> ListeningDragAndDrop;
     //public static UnityEvent<EnhancedTouch.Finger> ListeningFingerUp;
     //public static UnityEvent<EnhancedTouch.Finger> ListeningFingerMove;
 
-    private float _lastTapTime = 0;
     private float _multipleTapThreshold = 0.3f;
-    private float _startTimeStamp = -1;
-    private int _multipleFingersCount = 0;
-    private int _fingersLifted = 0;
-
-    private void AddFingerCount(float startedTime)
-    {
-        if(_startTimeStamp == -1)
-        {
-            _startTimeStamp = startedTime;
-        }
-        if(_startTimeStamp - startedTime < _multipleTapThreshold)
-        {
-            _multipleFingersCount++;
-        }
-    }
-
-    private void FinishFingerCount(int totalFingersInPlay) {
-        _fingersLifted++;
-        if(_fingersLifted == totalFingersInPlay)
-        {
-            _gm.DebugLog($"TriggerFingerUp says {_multipleFingersCount} tab");
-            _multipleFingersCount = 0;
-        }
-    }
+    private TouchInputState _touchState = TouchInputState.Inactive;
+    private Vector2 iniDragPosition;
 
     
     private void Start()
@@ -65,94 +41,55 @@ public class InputManager : MonoBehaviour
     }
 
     private void Update()
-    {
-        if (EnhancedTouch.Touch.activeFingers.Count > 0) {
-            if (EnhancedTouch.Touch.activeTouches[0].phase.ToString() == "Began") 
+    {        
+        if (EnhancedTouch.Touch.activeFingers.Count == 1)
+        {
+            //startedTime = (float)EnhancedTouch.Touch.activeTouches[0].time;
+            //Debug.Log($"One click detected | phase:{EnhancedTouch.Touch.activeTouches[0].phase} | inProgress:{EnhancedTouch.Touch.activeTouches[0].inProgress} | isInProgress:{EnhancedTouch.Touch.activeTouches[0].isInProgress} | isTap:{EnhancedTouch.Touch.activeTouches[0].isTap} | time: {EnhancedTouch.Touch.activeTouches[0].time} | startedTime: {EnhancedTouch.Touch.activeTouches[0].startTime}");
+            //Debug.Log($"UPDATE: One click detected | {EnhancedTouch.Touch.activeTouches[0].ToString()}");
+            if (EnhancedTouch.Touch.activeTouches[0].phase.Equals(UnityEngine.InputSystem.TouchPhase.Began))
             {
-                //Debug.Log($"UPDATE : entered in Began if check COUNTED {EnhancedTouch.Touch.activeFingers.Count} fingers");
-                ListeningFingerInput?.Invoke(EnhancedTouch.Touch.activeTouches[0], EnhancedTouch.Touch.activeFingers.Count);
+                iniDragPosition = EnhancedTouch.Touch.activeFingers[0].currentTouch.screenPosition;
+            }
+            else if (EnhancedTouch.Touch.activeTouches[0].phase.Equals(UnityEngine.InputSystem.TouchPhase.Moved))
+            {
+                if (_touchState == TouchInputState.Inactive) {
+                    //Debug.Log($"UPDATE: First part of dragging detected");
+                    _touchState = TouchInputState.Dragging;
+                }
+            }
+            else if (EnhancedTouch.Touch.activeTouches[0].phase.Equals(UnityEngine.InputSystem.TouchPhase.Ended))
+            {
+                if (EnhancedTouch.Touch.activeTouches[0].time - EnhancedTouch.Touch.activeTouches[0].startTime < _multipleTapThreshold)
+                {
+                    //Debug.Log($"UPDATE: One click detected");
+                    ListeningOneTouch?.Invoke(EnhancedTouch.Touch.activeTouches[0]);
+                }
+                else {
+                    //iniDragPosition -that has been saved is the same as- EnhancedTouch.Touch.activeTouches[0].startScreenPosition
+                    //Debug.Log($"UPDATE : drag finished from {iniDragPosition} to startScreenPosition:{EnhancedTouch.Touch.activeTouches[0].startScreenPosition} or screenPosition:{EnhancedTouch.Touch.activeTouches[0].screenPosition} ");
+                    ListeningDragAndDrop?.Invoke(iniDragPosition, EnhancedTouch.Touch.activeTouches[0].screenPosition);
+                }
+                _touchState = TouchInputState.Inactive;
             }
         }
-
-        /*foreach (EnhancedTouch.Touch touch in EnhancedTouch.Touch.activeTouches){
-            if(touch.phase == UnityEngine.InputSystem.TouchPhase.Began)
+        else if (EnhancedTouch.Touch.activeFingers.Count == 2)
+        {
+            if (EnhancedTouch.Touch.activeTouches[0].phase.Equals(UnityEngine.InputSystem.TouchPhase.Began))
             {
-                fingersCount++;
+                //_gm.DebugLog($"INPUT MANAGER.Update >>> Double tab detected COUNTED {EnhancedTouch.Touch.activeFingers.Count} fingers");
+                ListeningTwoTouches?.Invoke(EnhancedTouch.Touch.activeTouches[0]);
+                _touchState = TouchInputState.Inactive;
             }
-        }*/
-        /*if (EnhancedTouch.Touch.activeFingers.Count > 0) {
-            foreach (EnhancedTouch.Finger finger in EnhancedTouch.Touch.activeFingers) {
-                _gm.DebugLog($"{finger.index} says ... Phase: {finger.currentTouch.phase} | Position: {finger.currentTouch.startScreenPosition}");
-            }
-            
-        }*/
+        }
+     }
+}
 
-        //if (EnhancedTouch.Touch.activeFingers.Count == 1)
-        //{
-        //    EnhancedTouch.Touch activeTouch = EnhancedTouch.Touch.activeFingers[0].currentTouch;
-        //    _gm.DebugLog($"Phase: {activeTouch.phase} | Position: {activeTouch.startScreenPosition}");
-        //}
-    }
-
-    //public void TriggerFingerDown(EnhancedTouch.Finger finger)
-    //{
-    //    float t = (float)EnhancedTouch.Touch.activeFingers[finger.index].currentTouch.startTime;
-    //    AddFingerCount(t);
-    //   /* int multipleTouches = 0;
-    //    float startedTime = (float)EnhancedTouch.Touch.activeFingers[0].currentTouch.startTime;
-    //    _gm.DebugLog($"INPUT MANAGER detected touch at {startedTime}");
-    //    ListeningFingerDown?.Invoke(finger);
-
-    //    foreach (EnhancedTouch.Finger f in EnhancedTouch.Touch.activeFingers) {
-    //        if (f.currentTouch.startTime - startedTime < _multipleTapThreshold)
-    //        {
-    //            multipleTouches++;
-    //        }
-    //    }
-    //    _gm.DebugLog($"INPUT MANAGER detected {multipleTouches} tabs");*/
-
-
-    //    /*        
-    //    if (finger.index == 0)
-    //    {
-    //        _gm.DebugLog("INPUT MANAGER detected single tab");
-    //    }
-    //    else if (finger.index == 1)
-    //    {
-    //        if (EnhancedTouch.Touch.activeFingers[0].currentTouch.startTime - EnhancedTouch.Touch.activeFingers[1].currentTouch.startTime < multipleTapThreshold)
-    //        {
-    //            _gm.DebugLog("INPUT MANAGER detected double tab");
-    //        }
-    //    }
-    //    else if (finger.index == 2)
-    //    {
-    //        if (EnhancedTouch.Touch.activeFingers[0].currentTouch.startTime - EnhancedTouch.Touch.activeFingers[1].currentTouch.startTime < multipleTapThreshold &&
-    //            EnhancedTouch.Touch.activeFingers[1].currentTouch.startTime - EnhancedTouch.Touch.activeFingers[2].currentTouch.startTime < multipleTapThreshold)
-    //        {
-    //            _gm.DebugLog("INPUT MANAGER detected triple tab");
-    //        }
-    //    }*/
-    //}
-
-    //public void TriggerFingerUp(EnhancedTouch.Finger finger)
-    //{
-    //    ListeningFingerUp?.Invoke(finger);
-
-    //    //_gm.DebugLog($"TriggerFingerUp says: {EnhancedTouch.Touch.activeFingers.Count}");
-    //    //FinishFingerCount(EnhancedTouch.Touch.activeFingers.Count);
-
-
-    //    /*EnhancedTouch.Touch activeTouch = EnhancedTouch.Touch.activeFingers[finger.index].currentTouch;
-
-    //    _gm.DebugLog($"TRIGGER FINGER UP ... Finger with index: {finger.index} got to Phase: {activeTouch.phase}");
-    //    if (activeTouch.phase.Equals(TouchPhase.Ended)) {
-    //        _gm.DebugLog($"Finger with index: {finger.index} got to Phase: {activeTouch.phase}");
-    //    }*/
-    //}
-
-    //public void TriggerFingerMove(EnhancedTouch.Finger finger)
-    //{
-    //    ListeningFingerMove?.Invoke(finger);
-    //}
+public enum TouchInputState
+{
+    Inactive,
+    Clicking,
+    Dragging,
+    Dropping
 }
 
