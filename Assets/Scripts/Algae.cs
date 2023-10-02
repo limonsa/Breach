@@ -4,38 +4,50 @@ using UnityEngine;
 
 public class Algae : MonoBehaviour, IPlayable
 {
+    [SerializeField] private int _durationInSeconds = 5;
+    public Health _health = new Health();
+    public static float _power;
 
-    WaterSource _tempWaterSource = null;
+    private int _currentTime;
 
-    public void AttachWaterSource(WaterSource source)
-    {
-        _tempWaterSource = source;
-    }
-
-    public WaterSource GetAttachedWaterSource()
-    {
-        return _tempWaterSource;
-    }
-
-    public void EmptyWaterSource()
-    {
-        _tempWaterSource = null;
-    }
-
-    public void GetDamage(float damageValue)
-    {
-        throw new System.NotImplementedException();
-    }
 
     // Start is called before the first frame update
     void Start()
     {
-        
+        _power = 25f;
+        _currentTime = -1;
     }
 
-    // Update is called once per frame
-    void Update()
+    private void Update()
     {
-        
+        if (_currentTime < 0)
+        {
+            Protect();
+        }
+    }
+
+    public void Protect()
+    {
+        _currentTime = _durationInSeconds;
+        StartCoroutine(ProtectIEnum());
+    }
+    IEnumerator ProtectIEnum()
+    {
+        while (_currentTime >= 0)
+        {
+            yield return new WaitForSeconds(1f);
+            _currentTime--;
+
+        }
+        gameObject.SetActive(false);
+    }
+    public float GetDamagePower()
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public void SetDamagePower(float damageValue)
+    {
+        throw new System.NotImplementedException();
     }
 }

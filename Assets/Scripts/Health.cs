@@ -1,10 +1,14 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class Health
 {
     private float _life;    //min[0-100]max
+
+    
+
 
     public Health()
     {
@@ -43,5 +47,9 @@ public class Health
             _life -= value;
         }
         return isAlive;
+    }
+
+    public float GetLifeValue() {
+        return _life;
     }
 }

@@ -34,7 +34,14 @@ public class Spawner : MonoBehaviour
         EnhancedTouch.EnhancedTouchSupport.Disable();
     }
 
-    public GameObject Spawn(GameObject prefabToSpawn, Vector2 targetPosition) {
+    public GameObject Spawn(GameObject prefabToSpawn, Vector3 targetPosition)
+    {
+        GameObject objectSpawned = null;
+        objectSpawned = Instantiate(prefabToSpawn, targetPosition, Quaternion.identity);
+        return objectSpawned;
+    }
+
+    public GameObject SpawnInPlain(GameObject prefabToSpawn, Vector2 targetPosition) {
         GameObject objectSpawned = null;
         if (prefabToSpawn != null && _arRaycastMngr.Raycast(targetPosition, _hits, TrackableType.PlaneWithinPolygon))
         {
@@ -74,12 +81,13 @@ public class Spawner : MonoBehaviour
         return objectSpawned;
     }
 
-    public GameObject CheckPlacement(string name, EnhancedTouch.Touch targetPosition)
+    public GameObject CheckPlacement(string tagName, EnhancedTouch.Touch targetPosition)
     {
         /*if (_arRaycastMngr.Raycast(targetPosition, _hits, TrackableType.FeaturePoint))
         {
             _gm.DebugLog($"Raycast hit a {_hits[0].hitType}");
         }*/
+        
         GameObject objectFound = null;
         Vector3 pos = targetPosition.startScreenPosition;
         Ray ray = Camera.main.ScreenPointToRay(pos);
@@ -88,10 +96,10 @@ public class Spawner : MonoBehaviour
 
         if(Physics.Raycast(ray, out hit))
         {
-            if (hit.collider.CompareTag("Spawnable") && hit.collider.gameObject.name.Contains(name))
+            //if (hit.collider.CompareTag("Spawnable") && hit.collider.gameObject.name.Contains(name))
+            if (hit.collider.CompareTag(tagName))
             {
                 objectFound = hit.collider.gameObject;
-                //_gm.DebugLog($"SPAWNER CheckPlacement detected {hit.collider.name} at {hit.collider.transform.position}");
             }
         }
         return objectFound;

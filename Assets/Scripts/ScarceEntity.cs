@@ -19,5 +19,6 @@ public abstract class ScarceEntity : MonoBehaviour, IPlayable
 
     public abstract void Attack(float interval);
 
-    public abstract void GetDamage(float damage);
+    public abstract float GetDamagePower();
+    public abstract void SetDamagePower(float damageValue);
 }

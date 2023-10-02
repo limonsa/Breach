@@ -4,5 +4,8 @@ using UnityEngine;
 
 public interface IPlayable
 {
-    void GetDamage(float damageValue);
+    public static float _power;
+
+    float GetDamagePower();
+    void SetDamagePower(float damageValue);
 }
